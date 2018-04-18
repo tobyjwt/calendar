@@ -4,6 +4,7 @@
             <div class="back" @click="goBack()"><span class="back-icon">亃</span>返回</div>
             <div class="title">日历</div>
         </div>
+        <!--星期面板-->
         <div class="week">
             <div class="week-day weekend-day">日</div>
             <div class="week-day">一</div>
@@ -19,7 +20,7 @@
                     <div class="calendar-content-title">{{month.year}}年{{month.month}}月</div>
                     <ul class="calendar-content-day">
                         <li class="day-item" @click="selectDate(month, day)"
-                            :class="{holiday: day.isWeekend, disable: day.isDisable}" v-for="day in month.date">
+                            :class="{holiday: day.isWeekend || (typeof day.showDate) !== 'number', disable: day.isDisable}" v-for="day in month.date">
                             <p class="day-item-num"
                                :class="{CheckInDate: day.isCheckInDate,themeBackground: day.isCheckInDate || day.isCheckOutDate, CheckOutDate: day.isCheckOutDate}">
                                 {{day.showDate}}</p>
@@ -51,8 +52,8 @@
         },
         created() {
             // 需要显示节假日需要更新节假日信息，没有找到合适的节假日接口，这部分以后更新
-//            this.initRestDayList();
             this.getAllMonthData(12);
+            this.initRestDayList();
             let checkInMonth = this.info.checkInDate.split('-')[1];
             let checkInDate = this.info.checkInDate.split('-')[2];
             let checkOutMonth = this.info.checkOutDate.split('-')[1];
@@ -118,9 +119,6 @@
                         isWeekend = true;
                     }
                     let isRestDay = false;
-//                    if (this.restDayList[year][month][showDate]) {
-//                        isRestDay = true;
-//                    }
                     ret.push({
                         showDate: showDate,
                         isWeekend: isWeekend,
@@ -132,7 +130,6 @@
                 return ret;
             },
             getAllMonthData(num) {
-                console.log(num);
                 let todayData = new Date();
                 let thisYear = todayData.getFullYear();
                 let thisMonth = todayData.getMonth() + 1;
@@ -166,50 +163,28 @@
                 });
             },
             initRestDayList() {
-                this.restDayList['2017'] = {};
-                for (let i = 1; i <= 12; i++) {
-                    this.restDayList['2017'][i + ''] = {};
-                }
-                this.restDayList['2018'] = {};
-                for (let i = 1; i <= 12; i++) {
-                    this.restDayList['2018'][i + ''] = {};
-                }
-                this.restDayList['2017']['1']['1'] = true;
-                this.restDayList['2017']['1']['2'] = true;
-                this.restDayList['2017']['1']['27'] = true;
-                this.restDayList['2017']['1']['28'] = true;
-                this.restDayList['2017']['1']['29'] = true;
-                this.restDayList['2017']['1']['30'] = true;
-                this.restDayList['2017']['1']['31'] = true;
-                this.restDayList['2017']['2']['1'] = true;
-                this.restDayList['2017']['2']['2'] = true;
-                this.restDayList['2017']['4']['2'] = true;
-                this.restDayList['2017']['4']['3'] = true;
-                this.restDayList['2017']['4']['4'] = true;
-                this.restDayList['2017']['4']['29'] = true;
-                this.restDayList['2017']['4']['30'] = true;
-                this.restDayList['2017']['5']['1'] = true;
-                this.restDayList['2017']['5']['28'] = true;
-                this.restDayList['2017']['5']['29'] = true;
-                this.restDayList['2017']['5']['30'] = true;
-                for (let i = 1; i < 9; i++) {
-                    this.restDayList['2017']['10'][i + ''] = true;
-                }
-                this.restDayList['2018']['1']['1'] = true;
-                for (let i = 15; i < 22; i++) {
-                    this.restDayList['2018']['2'][i + ''] = true;
-                }
-                this.restDayList['2018']['4']['5'] = true;
-                this.restDayList['2018']['4']['6'] = true;
-                this.restDayList['2018']['4']['7'] = true;
-                this.restDayList['2018']['4']['29'] = true;
-                this.restDayList['2018']['4']['30'] = true;
-                this.restDayList['2018']['5']['1'] = true;
-                this.restDayList['2018']['6']['18'] = true;
-                this.restDayList['2018']['9']['24'] = true;
-                for (let i = 1; i < 8; i++) {
-                    this.restDayList['2018']['10'][i + ''] = true;
-                }
+                let param = '';
+                param = 2018;
+                this.$ajax.get('http://apps.homed.me/payTest/trans.php', {
+                    params: {
+                        year: param
+                    }
+                }).then(res => {
+                    let holiday = JSON.parse(res.data.result.data.holidaylist);
+                    for (let i in holiday) {
+                        let arr = holiday[i].startday.split('-');
+                        for (let m in this.allMonthData) {
+                            if (this.allMonthData[m].year.toString() !== arr[0] || this.allMonthData[m].month.toString() !== arr[1]) {
+                            } else {
+                                for (let n in this.allMonthData[m].date) {
+                                    if (this.allMonthData[m].date[n].showDate.toString() === arr[2]) {
+                                        this.allMonthData[m].date[n].showDate = holiday[i].name.substring(0, 2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             },
             selectDate(month, day) {
                 if (day.isDisable) {

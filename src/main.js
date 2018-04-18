@@ -4,14 +4,14 @@ import Vue from 'vue';
 import App from './App';
 import router from './router';
 import fastclick from 'fastclick';
-import VueResource from 'vue-resource';
 import vhomed from './common/vhomed.js';
+import axios from 'axios';
 
-Vue.use(VueResource);
 Vue.use(vhomed);
 Vue.config.productionTip = false;
 // 消除手机端点击300ms延迟
 fastclick.attach(document.body);
+Vue.prototype.$ajax = axios;
 
 /* eslint-disable no-new */
 new Vue({
